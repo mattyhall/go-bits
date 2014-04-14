@@ -68,7 +68,8 @@ func (enc *Encoder) Write(writer io.Writer) error {
 }
 
 // WriteAndPad will write the stored bits to writer. If there is not a round number of bytes to store then it will add
-// the required number of padBits to the end. It will return whether or not it had to pad and the error given by writing to writer.
+// the required number of bits, with value padBit, to the end. It will return whether or not it had to pad and the error 
+// given by writing to writer.
 func (enc *Encoder) WriteAndPad(writer io.Writer, padBit bool) (bool, error) {
     padded := enc.pad(padBit)
     err := enc.Write(writer)
@@ -86,7 +87,7 @@ func NewDecoder(reader io.Reader) Decoder {
 }
 
 // GetBit will return one bit from the reader. It will return any errors from getting the data from the reader. It should be noted 
-// that it may have consumed more data then expected, as readers only allow bytes to be read from them.
+// that it may have consumed more data than expected from the reader, as readers only allow bytes to be read from them.
 func (dec *Decoder) GetBit() (bool, error) {
     if len(dec.data) == 0 {
         bytes := make([]byte, 1)
