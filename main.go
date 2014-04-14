@@ -8,10 +8,10 @@ import (
 
 func main() {
     buff := bytes.NewBuffer(make([]byte, 0))
-    encoder := bits.NewEncoder(buff)
-    encoder.EncodeBits([]bool{true, false, true, false, true, true, true, })
-    encoder.Flush(false)
+    encoder := bits.NewEncoder()
+    encoder.PutBits([]bool{true, false, true, false, true, true, true})
+    encoder.WriteAndPad(buff, false)
     decoder := bits.NewDecoder(buff)
-    bs, err := decoder.DecodeBits()
+    bs, err := decoder.GetBits()
     fmt.Println(bs, err, buff)
 }

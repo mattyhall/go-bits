@@ -3,6 +3,7 @@ package bits
 
 import (
     "io"
+    "errors"
 )
 
 func bitToInt(bit bool) int {
@@ -14,48 +15,64 @@ func bitToInt(bit bool) int {
 }
 
 type Encoder struct {
-    writer io.Writer
-    data []bool
+    bits []bool
+    bytes []byte
 }
 
-// NewEncoder creates a new encoder which will write its data to writer 
-func NewEncoder(writer io.Writer) Encoder {
-    return Encoder{writer, make([]bool, 0)}
+// NewEncoder creates a new encoder
+func NewEncoder() Encoder {
+    return Encoder{make([]bool, 0), make([]byte, 0)}
 }
 
-// EncodeBit will encode a bit
-func (enc *Encoder) EncodeBit(bit bool) bool {
-    enc.data = append(enc.data, bit)
-    if len(enc.data) == 8 {
+// PutBit will store the bit.
+func (enc *Encoder) PutBit(bit bool) {
+    enc.bits = append(enc.bits, bit)
+    if len(enc.bits) == 8 {
         var b byte
         for i := 7; i >= 0; i-- {
-            n := bitToInt(enc.data[7 - i])
+            n := bitToInt(enc.bits[7 - i])
             b += byte(n << uint8(i))
         }
-        bytes := []byte{b}
-        enc.writer.Write(bytes)
-        enc.data = make([]bool, 0)
-        return true
+        enc.bytes = append(enc.bytes, b)
+        enc.bits = make([]bool, 0)
     }
-    return false
 }
 
-func (enc *Encoder) EncodeBits(bits []bool) bool {
-    allWritten := true
+// PutBits will store all the bits in the slice given.
+func (enc *Encoder) PutBits(bits []bool) {
     for _, bit := range bits {
-        allWritten = enc.EncodeBit(bit)
+        enc.PutBit(bit)
     }
-    return allWritten
 }
 
-func (enc *Encoder) Flush(defaultBit bool) {
-    length := len(enc.data)
+func (enc *Encoder) pad(padBit bool) bool {
+    length := len(enc.bits)
     if length == 0 {
-        return
+        return false
     }
     for bitsNeeded := 8 - length; bitsNeeded > 0; bitsNeeded-- {
-        enc.EncodeBit(defaultBit)
+        enc.PutBit(padBit)
     }
+    return true
+}
+
+// Write will write the stored bits to writer. If there is not a multiple of 8 bits to store, ie. there is not a round number 
+// of bytes to write, then it will return an error. Otherwise it will return the error given by writing to writer.
+func (enc *Encoder) Write(writer io.Writer) error {
+    length := len(enc.bits)
+    if length != 0 {
+        return errors.New("There is not a whole numbers of bytes available to be written (maybe set pad to true?)")
+    }
+    _, err := writer.Write(enc.bytes)
+    return err
+}
+
+// WriteAndPad will write the stored bits to writer. If there is not a round number of bytes to store then it will add
+// the required number of padBits to the end. It will return whether or not it had to pad and the error given by writing to writer.
+func (enc *Encoder) WriteAndPad(writer io.Writer, padBit bool) (bool, error) {
+    padded := enc.pad(padBit)
+    err := enc.Write(writer)
+    return padded, err
 }
 
 type Decoder struct {
@@ -63,11 +80,14 @@ type Decoder struct {
     data []bool
 }
 
+// NewDecoder creates a new decoder.
 func NewDecoder(reader io.Reader) Decoder {
     return Decoder{reader, make([]bool, 0)}
 }
 
-func (dec *Decoder) DecodeBit() (bool, error) {
+// GetBit will return one bit from the reader. It will return any errors from getting the data from the reader. It should be noted 
+// that it may have consumed more data then expected, as readers only allow bytes to be read from them.
+func (dec *Decoder) GetBit() (bool, error) {
     if len(dec.data) == 0 {
         bytes := make([]byte, 1)
         if _, err := dec.reader.Read(bytes); err != nil {
@@ -83,12 +103,13 @@ func (dec *Decoder) DecodeBit() (bool, error) {
     return b, nil
 }
 
-func (dec *Decoder) DecodeBits() ([]bool, error) {
+// GetBits will get all of the bits from the reader and return any errors it encounters from accessing the reader
+func (dec *Decoder) GetBits() ([]bool, error) {
     var bit bool
     var err error
     bits := make([]bool, 0)
     for err == nil {
-        bit, err = dec.DecodeBit()
+        bit, err = dec.GetBit()
         bits = append(bits, bit)
     }
     if err == io.EOF {
