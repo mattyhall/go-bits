@@ -12,6 +12,7 @@ func main() {
     encoder := bits.NewEncoder()
     // Store the 7 bits 1010111
     encoder.PutBits([]bool{true, false, true, false, true, true, true})
+    fmt.Println(encoder.Len(), encoder.RemainderBits())
     // Write the bits to the buffer. As there is only 7 bits then one extra one will be added
     // It will be a 0 as false is passed to WriteAndPad
     encoder.WriteAndPad(buff, false)

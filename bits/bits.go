@@ -46,6 +46,22 @@ func (enc *Encoder) PutBits(bits []bool) {
     }
 }
 
+// RemainderBits returns the number of individual bits that are being store. If there has been a multiple of 8 bits stored 
+// then it will return 0, otherwise it will return the remainder of the number of bits stored divided by 8. For example if 9 bits
+// are stored then it will return 1.
+//
+// This may be useful to check whether padding is needed, without having to handle the error from encoder.Write
+//
+// If you just want the number of bits stored, use encoder.Len
+func (enc Encoder) RemainderBits() int {
+    return len(enc.bits)
+}
+
+// Len returns the number of bits stored
+func (enc Encoder) Len() int {
+    return len(enc.bytes) * 8 + len(enc.bits)
+}
+
 func (enc *Encoder) pad(padBit bool) bool {
     length := len(enc.bits)
     if length == 0 {
