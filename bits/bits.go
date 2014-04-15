@@ -46,6 +46,31 @@ func (enc *Encoder) PutBits(bits []bool) {
     }
 }
 
+// PutByte will store one byte, even if there is not a round number of bytes already (so if 7 bits had already been added then after a call
+// to PutByte there would be 15 - it does not automatically pad).
+func (enc *Encoder) PutByte(b byte) {
+    if len(enc.bits) == 0 {
+        enc.bytes = append(enc.bytes, b)
+        return
+    }
+    var i int
+    for i = 7; i >= 0; i-- {
+        val := (b >> uint8(i)) & 1
+        bit := false
+        if val == 1 {
+            bit = true
+        }
+        enc.PutBit(bit)
+    }
+}
+
+// PutBytes will store all the bytes in the slice given.
+func (enc *Encoder) PutBytes(bytes []byte) {
+    for _, b := range bytes {
+        enc.PutByte(b)
+    }
+}
+
 // RemainderBits returns the number of individual bits that are being store. If there has been a multiple of 8 bits stored 
 // then it will return 0, otherwise it will return the remainder of the number of bits stored divided by 8. For example if 9 bits
 // are stored then it will return 1.
@@ -126,17 +151,46 @@ func (dec *Decoder) GetBit() (bool, error) {
     return b, nil
 }
 
-// GetBits will get all of the bits from the reader and return any errors it encounters from accessing the reader
-func (dec *Decoder) GetBits() ([]bool, error) {
-    var bit bool
+// GetBits will return n number of bits from the reader and any errors. If there is an error part way through getting the bits it will 
+// return the bits it has got so far.
+func (dec *Decoder) GetBits(n int) ([]bool, error) {
     var err error
+    var bit bool
     bits := make([]bool, 0)
-    for err == nil {
+    for n > 0 && err == nil {
         bit, err = dec.GetBit()
-        bits = append(bits, bit)
+        if err == nil {
+            bits = append(bits, bit)
+        }
+        n--
     }
-    if err == io.EOF {
-        return bits[:len(bits) - 1], nil
+    return bits, err
+}
+
+// GetByte will get one byte and return it and any errors encountered.
+func (dec *Decoder) GetByte() (byte, error) {
+    bytes, err := dec.GetBits(8)
+    if err != nil {
+        return 0, err
     }
-    return nil, err
+    var b byte
+    for i := 7; i >= 0; i-- {
+        b += byte(bitToInt(bytes[7 - i]) << uint8(i))
+    }
+    return b, nil
+}
+
+// GetBytes returns n bytes and any errors encountered whilst reading.
+func (dec *Decoder) GetBytes(n int) ([]byte, error) {
+    var err error
+    var b byte
+    bytes := make([]byte, 0)
+    for n > 0 && err == nil {
+        b, err = dec.GetByte()
+        if err == nil {
+            bytes = append(bytes, b)
+        }
+        n--
+    }
+    return bytes, err
 }
