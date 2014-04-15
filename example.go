@@ -16,8 +16,9 @@ func main() {
     // It will be a 0 as false is passed to WriteAndPad
     encoder.WriteAndPad(buff, false)
 
+    // Could use bits.NewDecoderFromBytes(buff.Bytes())
     decoder := bits.NewDecoder(buff)
     // Read the bits back, should get 8: 10101110
     bs, err := decoder.GetBits()
-    fmt.Println(bs, err, buff)
+    fmt.Println(bs, err)
 }

@@ -4,6 +4,7 @@ package bits
 import (
     "io"
     "errors"
+    "bytes"
 )
 
 func bitToInt(bit bool) int {
@@ -84,6 +85,11 @@ type Decoder struct {
 // NewDecoder creates a new decoder.
 func NewDecoder(reader io.Reader) Decoder {
     return Decoder{reader, make([]bool, 0)}
+}
+
+// NewDecoderFromBytes creates a new decoder which reads from the slice b
+func NewDecoderFromBytes(b []byte) Decoder {
+    return Decoder{bytes.NewBuffer(b), make([]bool, 0)}
 }
 
 // GetBit will return one bit from the reader. It will return any errors from getting the data from the reader. It should be noted 
