@@ -4,7 +4,7 @@ go-bits is a Go package that allows you to store and write bits to a io.Writer a
 There are a number of reasons why you may want to write single bits and to do this with just the standard library at the moment you would have
 to do some bit shifting yourself. This library handles that for you.
 
-Documentation is available at http://godoc.org/github.com/mattyhall/go-bits/bits
+Documentation is available at http://godoc.org/github.com/mattyhall/go-bits/bits or see example.go for an example of use.
 
 Pull requests, issues and thoughts are all welcome.
 

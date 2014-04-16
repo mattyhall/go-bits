@@ -25,8 +25,7 @@ func NewEncoder() Encoder {
     return Encoder{make([]bool, 0), make([]byte, 0)}
 }
 
-// PutBit will store the bit.
-func (enc *Encoder) PutBit(bit bool) {
+func (enc *Encoder) putBit(bit bool) {
     enc.bits = append(enc.bits, bit)
     if len(enc.bits) == 8 {
         var b byte
@@ -39,16 +38,14 @@ func (enc *Encoder) PutBit(bit bool) {
     }
 }
 
-// PutBits will store all the bits in the slice given.
-func (enc *Encoder) PutBits(bits []bool) {
+// PutBits will store all the bits passed to the function
+func (enc *Encoder) PutBits(bits ...bool) {
     for _, bit := range bits {
-        enc.PutBit(bit)
+        enc.putBit(bit)
     }
 }
 
-// PutByte will store one byte, even if there is not a round number of bytes already (so if 7 bits had already been added then after a call
-// to PutByte there would be 15 - it does not automatically pad).
-func (enc *Encoder) PutByte(b byte) {
+func (enc *Encoder) putByte(b byte) {
     if len(enc.bits) == 0 {
         enc.bytes = append(enc.bytes, b)
         return
@@ -60,14 +57,15 @@ func (enc *Encoder) PutByte(b byte) {
         if val == 1 {
             bit = true
         }
-        enc.PutBit(bit)
+        enc.putBit(bit)
     }
 }
 
-// PutBytes will store all the bytes in the slice given.
-func (enc *Encoder) PutBytes(bytes []byte) {
+// PutBytes will store all the bytes passed to the function. Be aware it does not automatically pad so if you have, for example, 7 bits 
+// and write a byte then you will have 15 bits. 
+func (enc *Encoder) PutBytes(bytes ...byte) {
     for _, b := range bytes {
-        enc.PutByte(b)
+        enc.putByte(b)
     }
 }
 
@@ -93,7 +91,7 @@ func (enc *Encoder) pad(padBit bool) bool {
         return false
     }
     for bitsNeeded := 8 - length; bitsNeeded > 0; bitsNeeded-- {
-        enc.PutBit(padBit)
+        enc.putBit(padBit)
     }
     return true
 }
